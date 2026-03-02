@@ -1,9 +1,9 @@
 // change this to reference the dataset you chose to work with.
-import { bikeShare as chartData } from "./data/bikeShare.js";
+import { gameSales as chartData } from "./data/gameSales.js";
 
 // --- DOM helpers ---
-const monthSelect = document.getElementById("monthSelect");
-const hoodSelect = document.getElementById("hoodSelect");
+const yearSelect = document.getElementById("yearSelect");
+const titleSelect = document.getElementById("titleSelect");
 const metricSelect = document.getElementById("metricSelect");
 const chartTypeSelect = document.getElementById("chartType");
 const renderBtn = document.getElementById("renderBtn");
@@ -13,14 +13,14 @@ const canvas = document.getElementById("chartCanvas");
 let currentChart = null;
 
 // --- Populate dropdowns from data ---
-const months = [...new Set(chartData.map(r => r.month))];
-const hoods = [...new Set(chartData.map(r => r.hood))];
+const years = [...new Set(chartData.map(r => r.year))];
+const titles = [...new Set(chartData.map(r => r.title))];
 
-months.forEach(m => monthSelect.add(new Option(m, m)));
-hoods.forEach(h => hoodSelect.add(new Option(h, h)));
+years.forEach(m => yearSelect.add(new Option(m, m)));
+titles.forEach(h => titleSelect.add(new Option(h, h)));
 
-monthSelect.value = months[0];
-hoodSelect.value = hoods[0];
+yearSelect.value = years[0];
+titleSelect.value = titles[0];
 
 // Preview first 6 rows
 dataPreview.textContent = JSON.stringify(chartData.slice(0, 6), null, 2);
@@ -28,31 +28,31 @@ dataPreview.textContent = JSON.stringify(chartData.slice(0, 6), null, 2);
 // --- Main render ---
 renderBtn.addEventListener("click", () => {
   const chartType = chartTypeSelect.value;
-  const month = monthSelect.value;
-  const hood = hoodSelect.value;
+  const year = yearSelect.value;
+  const title = titleSelect.value;
   const metric = metricSelect.value;
 
   // Destroy old chart if it exists (common Chart.js gotcha)
   if (currentChart) currentChart.destroy();
 
   // Build chart config based on type
-  const config = buildConfig(chartType, { month, hood, metric });
+  const config = buildConfig(chartType, { year, title, metric });
 
   currentChart = new Chart(canvas, config);
 });
 
 // --- Students: you’ll edit / extend these functions ---
-function buildConfig(type, { month, hood, metric }) {
-  if (type === "bar") return barByNeighborhood(month, metric);
-  if (type === "line") return lineOverTime(hood, ["trips", "revenueUSD"]);
-  if (type === "scatter") return scatterTripsVsTemp(hood);
-  if (type === "doughnut") return doughnutMemberVsCasual(month, hood);
-  if (type === "radar") return radarCompareNeighborhoods(month);
-  return barByNeighborhood(month, metric);
+function buildConfig(type, { year, title, metric }) {
+  if (type === "bar") return barByTitle(year, metric);
+  if (type === "line") return lineOverTime(title, ["unitsM", "revenueUSD"]);
+  if (type === "scatter") return scatterreviewScoreVsrevenueUSD(title);
+  if (type === "doughnut") return doughnutMemberVsCasual(year, title);
+  if (type === "radar") return radarCompareTitles(year);
+  return barByTitle(year, metric);
 }
 
 // Task A: BAR — compare neighborhoods for a given month
-function barByNeighborhood(month, metric) {
+function barByTitle(year, metric) {
   const rows = chartData.filter(r => r.month === month);
 
   const labels = rows.map(r => r.hood);
@@ -80,11 +80,11 @@ function barByNeighborhood(month, metric) {
   };
 }
 
-// Task B: LINE — trend over time for one neighborhood (2 datasets)
-function lineOverTime(hood, metrics) {
-  const rows = chartData.filter(r => r.hood === hood);
+// Task B: LINE — trend over time for one title (2 datasets)
+function lineOverTime(title, metrics) {
+  const rows = chartData.filter(r => r.title === title);
 
-  const labels = rows.map(r => r.month);
+  const labels = rows.map(r => r.year);
 
   const datasets = metrics.map(m => ({
     label: m,
@@ -97,48 +97,48 @@ function lineOverTime(hood, metrics) {
     options: {
       responsive: true,
       plugins: {
-        title: { display: true, text: `Trends over time: ${hood}` }
+        title: { display: true, text: `Trends over time: ${title}` }
       },
       scales: {
-        y: { title: { display: true, text: "Value" } },
-        x: { title: { display: true, text: "Month" } }
+        y: { title: { display: true, text: "Revenue" } },
+        x: { title: { display: true, text: "Units" } }
       }
     }
   };
 }
 
 // SCATTER — relationship between temperature and trips
-function scatterTripsVsTemp(hood) {
-  const rows = chartData.filter(r => r.hood === hood);
+function scatterreviewScoreVsrevenueUSD(title) {
+  const rows = chartData.filter(r => r.title === title);
 
-  const points = rows.map(r => ({ x: r.tempC, y: r.trips }));
+  const points = rows.map(r => ({ x: r.reviewScore, y: r.revenueUSD }));
 
   return {
     type: "scatter",
     data: {
       datasets: [{
-        label: `Trips vs Temp (${hood})`,
+        label: `reviewScore vs revenueUSD (${title})`,
         data: points
       }]
     },
     options: {
       plugins: {
-        title: { display: true, text: `Does temperature affect trips? (${hood})` }
+        title: { display: true, text: `Does reviewScore affect revenueUSD? (${title})` }
       },
       scales: {
-        x: { title: { display: true, text: "Temperature (C)" } },
-        y: { title: { display: true, text: "Trips" } }
+        x: { title: { display: true, text: "reviewScore" } },
+        y: { title: { display: true, text: "revenueUSD" } }
       }
     }
   };
 }
 
 // DOUGHNUT — member vs casual share for one hood + month
-function doughnutMemberVsCasual(month, hood) {
-  const row = chartData.find(r => r.month === month && r.hood === hood);
+function doughnutMemberVsCasual(year, title) {
+  const row = chartData.find(r => r.year === year && r.title === title);
 
-  const member = Math.round(row.memberShare * 100);
-  const casual = 100 - member;
+  const member = Math.round(row.esports);
+  const casual = !true;
 
   return {
     type: "doughnut",
@@ -148,7 +148,7 @@ function doughnutMemberVsCasual(month, hood) {
     },
     options: {
       plugins: {
-        title: { display: true, text: `Rider mix: ${hood} (${month})` }
+        title: { display: true, text: `Rider mix: ${title} (${year})` }
       }
     }
   };
