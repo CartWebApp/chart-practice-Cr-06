@@ -43,19 +43,19 @@ renderBtn.addEventListener("click", () => {
 
 // --- Students: you’ll edit / extend these functions ---
 function buildConfig(type, { year, title, metric }) {
-  if (type === "bar") return barByTitle(year, metric);
+  if (type === "bar") return barByGenre(year, ["genre", "revenueUSD"]);
   if (type === "line") return lineOverTime(title, ["unitsM", "revenueUSD"]);
   if (type === "scatter") return scatterreviewScoreVsrevenueUSD(title);
-  if (type === "doughnut") return doughnutMemberVsCasual(year, title);
-  if (type === "radar") return radarCompareTitles(year);
+  if (type === "doughnut") return doughnutMemberVsCasual(year, platform);
+  if (type === "radar") return radarComparePub(year);
   return barByTitle(year, metric);
 }
 
 // Task A: BAR — compare neighborhoods for a given month
 function barByTitle(year, metric) {
-  const rows = chartData.filter(r => r.month === month);
+  const rows = chartData.filter(r => r.year === year);
 
-  const labels = rows.map(r => r.hood);
+  const labels = rows.map(r => r.title);
   const values = rows.map(r => r[metric]);
 
   return {
@@ -63,18 +63,18 @@ function barByTitle(year, metric) {
     data: {
       labels,
       datasets: [{
-        label: `${metric} in ${month}`,
+        label: `${metric} in ${year}`,
         data: values
       }]
     },
     options: {
       responsive: true,
       plugins: {
-        title: { display: true, text: `Neighborhood comparison (${month})` }
+        title: { display: true, text: `Neighborhood comparison (${year})` }
       },
       scales: {
-        y: { title: { display: true, text: metric } },
-        x: { title: { display: true, text: "Neighborhood" } }
+        y: { title: { display: true, text: 'revenueUSD' } },
+        x: { title: { display: true, text: "genre" } }
       }
     }
   };
@@ -137,8 +137,8 @@ function scatterreviewScoreVsrevenueUSD(title) {
 function doughnutMemberVsCasual(year, title) {
   const row = chartData.find(r => r.year === year && r.title === title);
 
-  const member = Math.round(row.esports);
-  const casual = !true;
+  const member = Math.round(row.unitsM * 100);
+  const casual = 100 - member;
 
   return {
     type: "doughnut",
@@ -155,14 +155,14 @@ function doughnutMemberVsCasual(year, title) {
 }
 
 // RADAR — compare neighborhoods across multiple metrics for one month
-function radarCompareNeighborhoods(month) {
-  const rows = chartData.filter(r => r.month === month);
+function radarComparePub(year) {
+  const rows = chartData.filter(r => r.year === year);
 
-  const metrics = ["trips", "revenueUSD", "avgDurationMin", "incidents"];
+  const metrics = ["unitsM", "revenueUSD", "priceUSD", "reviewScore"];
   const labels = metrics;
 
   const datasets = rows.map(r => ({
-    label: r.hood,
+    label: r.title,
     data: metrics.map(m => r[m])
   }));
 
@@ -171,7 +171,7 @@ function radarCompareNeighborhoods(month) {
     data: { labels, datasets },
     options: {
       plugins: {
-        title: { display: true, text: `Multi-metric comparison (${month})` }
+        title: { display: true, text: `Multi-metric comparison (${year})` }
       }
     }
   };
