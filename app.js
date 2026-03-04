@@ -43,38 +43,41 @@ renderBtn.addEventListener("click", () => {
 
 // --- Students: you’ll edit / extend these functions ---
 function buildConfig(type, { year, title, metric }) {
-  if (type === "bar") return barByGenre(year, ["genre", "revenueUSD"]);
+  if (type === "bar") return barByTitle(year, metric);
   if (type === "line") return lineOverTime(title, ["unitsM", "revenueUSD"]);
   if (type === "scatter") return scatterreviewScoreVsrevenueUSD(title);
-  if (type === "doughnut") return doughnutMemberVsCasual(year, platform);
+  if (type === "doughnut") return doughnutMemberVsCasual(year);
   if (type === "radar") return radarComparePub(year);
   return barByTitle(year, metric);
 }
 
-// Task A: BAR — compare neighborhoods for a given month
+// Task A: BAR — compare platforms for a given month
 function barByTitle(year, metric) {
-  const rows = chartData.filter(r => r.year === year);
+  let rows = chartData.filter(r => r.year === +year);
+  if (year === "all") rows = chartData;
 
-  const labels = rows.map(r => r.title);
-  const values = rows.map(r => r[metric]);
+  const totals = {};
+  rows.forEach(r => { totals[r.platform] = (totals[r.platform] || 0) + r[metric]; });
+  const labels = Object.keys(totals);
+  const values = Object.values(totals);
 
   return {
     type: "bar",
     data: {
       labels,
       datasets: [{
-        label: `${metric} in ${year}`,
+        label: `${metric} (${year})`,
         data: values
       }]
     },
     options: {
       responsive: true,
       plugins: {
-        title: { display: true, text: `Neighborhood comparison (${year})` }
+        title: { display: true, text: `Sales by platform (${year})` }
       },
       scales: {
-        y: { title: { display: true, text: 'revenueUSD' } },
-        x: { title: { display: true, text: "genre" } }
+        y: { title: { display: true, text: metric } },
+        x: { title: { display: true, text: "Platform" } }
       }
     }
   };
@@ -100,14 +103,14 @@ function lineOverTime(title, metrics) {
         title: { display: true, text: `Trends over time: ${title}` }
       },
       scales: {
-        y: { title: { display: true, text: "Revenue" } },
-        x: { title: { display: true, text: "Units" } }
+        y: { title: { display: true, text: "Revenue / Units" } },
+        x: { title: { display: true, text: "Year" } }
       }
     }
   };
 }
 
-// SCATTER — relationship between temperature and trips
+// SCATTER — relationship between review scores and revenue
 function scatterreviewScoreVsrevenueUSD(title) {
   const rows = chartData.filter(r => r.title === title);
 
@@ -117,7 +120,7 @@ function scatterreviewScoreVsrevenueUSD(title) {
     type: "scatter",
     data: {
       datasets: [{
-        label: `reviewScore vs revenueUSD (${title})`,
+        label: `reviewScore vs revenueUSD`,
         data: points
       }]
     },
@@ -133,30 +136,31 @@ function scatterreviewScoreVsrevenueUSD(title) {
   };
 }
 
-// DOUGHNUT — member vs casual share for one hood + month
-function doughnutMemberVsCasual(year, title) {
-  const row = chartData.find(r => r.year === year && r.title === title);
-
-  const member = Math.round(row.unitsM * 100);
-  const casual = 100 - member;
+// DOUGHNUT — units vs region share
+function doughnutMemberVsCasual(year) {
+  const rows = chartData.filter(r => r.year === +year);
+  const regionTotals = {};
+  rows.forEach(r => { regionTotals[r.region] = (regionTotals[r.region] || 0) + r.unitsM; });
+  const labels = Object.keys(regionTotals);
+  const values = Object.values(regionTotals);
 
   return {
     type: "doughnut",
     data: {
-      labels: ["Members (%)", "Casual (%)"],
-      datasets: [{ label: "Rider mix", data: [member, casual] }]
+      labels,
+      datasets: [{ label: "Units sold (M)", data: values }]
     },
     options: {
       plugins: {
-        title: { display: true, text: `Rider mix: ${title} (${year})` }
+        title: { display: true, text: `Region share by units sold (${year})` }
       }
     }
   };
 }
 
-// RADAR — compare neighborhoods across multiple metrics for one month
+// RADAR — compare titles across multiple metrics for one month
 function radarComparePub(year) {
-  const rows = chartData.filter(r => r.year === year);
+  const rows = chartData.filter(r => r.year === +year);
 
   const metrics = ["unitsM", "revenueUSD", "priceUSD", "reviewScore"];
   const labels = metrics;
